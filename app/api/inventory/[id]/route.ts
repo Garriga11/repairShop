@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma';
 // GET single inventory item
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: any } }
 ) {
   try {
     const session = await getServerSession(authOptions);
