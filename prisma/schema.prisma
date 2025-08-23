@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(cuid())
+  name           String?
+  email          String          @unique
+  password       String
+  roleId         String
+  createdAt      DateTime        @default(now())
+  ticket         Ticket[]
+  role           Role            @relation(fields: [roleId], references: [id])
+  stockMovements StockMovement[] // Track who made inventory changes
+}
+
+model Role {
+  id    String @id @default(cuid())
+  name  String @unique
+  users User[]
+}
+
+model Ticket {
+  id            String        @id @default(cuid())
+  device        String?
+  deviceSN      String?
+  location      String?
+  status        String        @default("OPEN")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  userId        String?
+  accountId     String?
+  description   String?
+  customerName  String?
+  customerPhone String?
+  ticketBalance String?
+  repairTypeId  String?       // Add repair type association
+  invoice       Invoice?
+  account       Account?      @relation(fields: [accountId], references: [id])
+  User          User?         @relation(fields: [userId], references: [id])
+  repairType    RepairType?   @relation(fields: [repairTypeId], references: [id])
+  revenue       Revenue[]
+  ticketParts   TicketPart[]  // Parts used in this ticket
+}
+
+model Account {
+  id        String    @id @default(cuid())
+  name      String
+  balance   Float     @default(0)
+  createdAt DateTime  @default(now())
+  invoices  Invoice[]
+  payments  Payment[]
+  tickets   Ticket[]
+  revenue   Revenue[]
+}
+
+model Invoice {
+  id         String    @id @default(cuid())
+  ticketId   String    @unique
+  accountId  String
+  total      Float
+  paidAmount Float     @default(0)
+  dueAmount  Float
+  createdAt  DateTime  @default(now())
+  account    Account   @relation(fields: [accountId], references: [id])
+  ticket     Ticket    @relation(fields: [ticketId], references: [id])
+  Payment    Payment[]
+  revenue    Revenue[]
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  accountId String
+  invoiceId String?
+  amount    Float
+  method    String
+  createdAt DateTime @default(now())
+  account   Account  @relation(fields: [accountId], references: [id])
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
+  revenue   Revenue? @relation(fields: [revenueId], references: [id])
+  revenueId String?
+}
+
+model Revenue {
+  id          String    @id @default(cuid())
+  amount      Float
+  source      String
+  description String?
+  invoiceId   String?
+  ticketId    String?
+  accountId   String?
+  paymentDate DateTime
+  invoice     Invoice?  @relation(fields: [invoiceId], references: [id])
+  ticket      Ticket?   @relation(fields: [ticketId], references: [id])
+  account     Account?  @relation(fields: [accountId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Payment     Payment[]
+}
+
+
+model InventoryItem {
+  id              String       @id @default(cuid())
+  sku             String       @unique
+  name            String       // Part name (e.g., "iPhone 13 Charging Port")
+  description     String?
+  category        String?      // e.g., "Charging Ports", "Screens", "Batteries"
+  deviceModel     String?      // e.g., "iPhone 13", "Samsung Galaxy S21"
+  binNumber       String?
+  location        String?
+  unit            String       @default("piece")
+  quantity        Int          @default(0)
+  reorderLevel    Int          @default(5)
+  cost            Float        // Cost per unit
+  sellPrice       Float?       // Selling price per unit
+  needsReorder    Boolean      @default(false)
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  // Relationships
+  repairTypes     RepairType[] // Parts that can be used for specific repair types
+  ticketParts     TicketPart[] // Usage history
+  stockMovements  StockMovement[]
+
+  @@map("inventory_items")
+}
+
+// New model for repair types
+model RepairType {
+  id           String          @id @default(cuid())
+  name         String          // e.g., "iPhone 13 Port Replacement"
+  description  String?
+  deviceType   String          // e.g., "iPhone", "Samsung", "iPad"
+  deviceModel  String          // e.g., "iPhone 13", "Galaxy S21"
+  category     String          // e.g., "Screen Repair", "Port Replacement", "Battery"
+  laborPrice   Float           // Standard labor cost for this repair
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  
+  // Relationships
+  tickets      Ticket[]        // Tickets using this repair type
+  parts        InventoryItem[] // Parts needed for this repair type
+  
+  @@map("repair_types")
+}
+
+// Junction table for ticket-part relationships
+model TicketPart {
+  id            String        @id @default(cuid())
+  ticketId      String
+  inventoryId   String
+  quantityUsed  Int
+  costAtTime    Float         // Cost when part was used
+  createdAt     DateTime      @default(now())
+  
+  // Relationships
+  ticket        Ticket        @relation(fields: [ticketId], references: [id])
+  inventoryItem InventoryItem @relation(fields: [inventoryId], references: [id])
+  
+  @@map("ticket_parts")
+}
+
+// Track stock movements (additions, deductions, adjustments)
+model StockMovement {
+  id            String        @id @default(cuid())
+  inventoryId   String
+  type          StockMovementType
+  quantity      Int           // Positive for additions, negative for deductions
+  reason        String?       // e.g., "New stock", "Used in repair", "Damaged"
+  reference     String?       // Reference to ticket, PO, etc.
+  userId        String?       // Who made the change
+  createdAt     DateTime      @default(now())
+  
+  // Relationships
+  inventoryItem InventoryItem @relation(fields: [inventoryId], references: [id])
+  user          User?         @relation(fields: [userId], references: [id])
+  
+  @@map("stock_movements")
+}
+
+
+enum StockMovementType {
+  STOCK_IN      // Adding new stock
+  STOCK_OUT     // Using parts in repair
+  ADJUSTMENT    // Manual inventory adjustment
+  DAMAGED       // Parts marked as damaged
+  RETURNED      // Customer returned parts
+}
+
+enum RevenueSource {
+  REPAIR_SERVICE
+  PARTS_SALE
+  LABOR_CHARGE
+  DIAGNOSTIC_FEE
+  RUSH_SERVICE
+  WARRANTY_WORK
+  OTHER
+}
