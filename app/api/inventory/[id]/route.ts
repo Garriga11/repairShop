@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma';
 // GET single inventory item
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: any } }
+  { params }: { params: Record<string, string> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -36,7 +36,7 @@ export async function GET(
 // PUT update inventory item
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Record<string, string> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -124,7 +124,7 @@ export async function PUT(
 // DELETE inventory item (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Record<string, string> }
 ) {
   try {
     const session = await getServerSession(authOptions);

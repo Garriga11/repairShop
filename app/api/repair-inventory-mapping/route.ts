@@ -1,12 +1,11 @@
-'use server';
-
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@/auth'; // Make sure this path is correct
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -66,19 +65,18 @@ export async function GET() {
   }
 }
 
-// POST endpoint to link a repair type to inventory items
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { repairTypeId, inventoryItemIds } = await req.json();
+    const { repairTypeId, inventoryItemIds } = await request.json();
 
     if (!repairTypeId || !Array.isArray(inventoryItemIds)) {
-      return NextResponse.json({ 
-        error: 'repairTypeId and inventoryItemIds array are required' 
+      return NextResponse.json({
+        error: 'repairTypeId and inventoryItemIds array are required'
       }, { status: 400 });
     }
 
@@ -87,7 +85,7 @@ export async function POST(req: NextRequest) {
       where: { id: repairTypeId },
       data: {
         parts: {
-          set: inventoryItemIds.map(id => ({ id }))
+          set: inventoryItemIds.map((id: string) => ({ id }))
         }
       },
       include: {
