@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+
 import { getServerSession } from 'next-auth';
+import { NextResponse } from 'next/server';
 import { authOptions } from '@/auth';
 import prisma from '@/lib/prisma';
 
 // GET single inventory item
 export async function GET(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -35,7 +36,7 @@ export async function GET(
 
 // PUT update inventory item
 export async function PUT(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -123,7 +124,7 @@ export async function PUT(
 
 // DELETE inventory item (soft delete)
 export async function DELETE(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {

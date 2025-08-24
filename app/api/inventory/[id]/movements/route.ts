@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 
 // GET stock movements for an inventory item
 export async function GET(
-  request: NextRequest,
+  request: Request,
   context: { params: Record<string, string> }
 ) {
   try {
