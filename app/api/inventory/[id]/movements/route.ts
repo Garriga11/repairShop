@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma';
 // GET stock movements for an inventory item
 export async function GET(
   request: NextRequest,
-  { params }: { params: Record<string, string> }
+  context: { params: Record<string, string> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -15,7 +15,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const itemId = params.id;
+    const itemId = context.params.id;
 
     // Check if item exists
     const item = await prisma.inventoryItem.findUnique({
