@@ -3,13 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import prisma from '@/lib/prisma';
 
+// GET stock movements for an inventory item
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-
-  
-  const { id: itemId } = await params;
   try {
     const session = await getServerSession(authOptions);
 
@@ -17,7 +15,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-
+    const itemId = params.id;
 
     // Check if item exists
     const item = await prisma.inventoryItem.findUnique({

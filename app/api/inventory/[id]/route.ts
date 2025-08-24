@@ -7,10 +7,8 @@ import prisma from '@/lib/prisma';
 // GET single inventory item
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-
-  const { id: itemId } = await params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -20,7 +18,7 @@ export async function GET(
 
     const item = await prisma.inventoryItem.findUnique({
       where: { 
-        id: itemId,
+        id: params.id,
         isActive: true 
       }
     });
@@ -45,7 +43,7 @@ export async function PUT(
     const session = await getServerSession(authOptions);
     
     if (!session) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const data = await request.json();
@@ -71,7 +69,7 @@ export async function PUT(
     });
 
     if (!existingItem) {
-      return Response.json({ error: 'Item not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
 
     // Check if SKU is being changed and if new SKU already exists
