@@ -7,7 +7,7 @@ import prisma from '@/lib/prisma';
 // GET stock movements for a specific inventory item
 export async function GET(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -16,7 +16,7 @@ export async function GET(
     }
 
     const item = await prisma.inventoryItem.findUnique({
-      where: { id: context.params.id, isActive: true },
+      where: { id: params.id, isActive: true },
     });
 
     if (!item) {
@@ -24,7 +24,7 @@ export async function GET(
     }
 
     const movements = await prisma.stockMovement.findMany({
-      where: { inventoryId: context.params.id },
+      where: { inventoryId: params.id },
       include: {
         user: { select: { id: true, name: true, email: true } },
       },
