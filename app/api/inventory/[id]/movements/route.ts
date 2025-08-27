@@ -4,6 +4,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import prisma from '@/lib/prisma';
 
+
+export type  params  = {
+  id: string;
+}
+
 // GET stock movements for a specific inventory item
 export async function GET(
   request: Request,
